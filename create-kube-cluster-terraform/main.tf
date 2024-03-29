@@ -36,12 +36,17 @@ resource "aws_subnet" "my-subnet-2" {
   cidr_block = "10.0.2.0/24"
 }
 
-data "template_file" "master" {
-  template = file("${path.module}/master.sh")
-}
-
 data "template_file" "worker" {
   template = file("${path.module}/worker.sh")
+  vars = {
+    region        = data.aws_region.current.name
+    master_id     = aws_instance.master.id
+    master_private_ip = aws_instance.master.private_ip
+  }
+}
+
+data "template_file" "master" {
+  template = file("${path.module}/master.sh")
 }
 
 resource "aws_instance" "master" {
