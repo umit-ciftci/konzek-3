@@ -17,7 +17,7 @@ data "aws_region" "current" {}
 
 locals {
   name          = "Kubernetes"
-  keyname       = "first-key-pair"
+  keyname       = "konzek-key-pair"
   instancetype  = "t3a.medium"
   ami           = "ami-0557a15b87f6559cf"
 }

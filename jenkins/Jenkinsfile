@@ -1,0 +1,56 @@
+pipeline {
+  agent any
+
+  options {
+    buildDiscarder(logRotator(numToKeepStr: '3'))
+    disableConcurrentBuilds()
+    timestamps()
+  }
+
+  triggers {
+    githubWebhook()
+  }
+
+  stages {
+    stage('Initialize Terraform') {
+      steps {
+        sh 'terraform init'
+      }
+    }
+
+    stage('Test Infrastructure Changes') {
+      steps {
+        script {
+          def terraformPlan = sh(script: 'terraform plan', returnStatus: true)
+          if (terraformPlan == 0) {
+            echo 'Infrastructure changes tested successfully!'
+          } else {
+            error 'Failed to test infrastructure changes'
+          }
+        }
+      }
+    }
+
+    stage('Apply Infrastructure Changes') {
+      steps {
+        script {
+          def terraformApply = sh(script: 'terraform apply -auto-approve', returnStatus: true)
+          if (terraformApply == 0) {
+            echo 'Infrastructure changes applied successfully!'
+          } else {
+            error 'Failed to apply infrastructure changes'
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    failure {
+      script {
+        def terraformError = sh(script: 'terraform apply -auto-approve', returnStdout: true)
+        echo "Terraform apply failed with the following error: ${terraformError}"
+      }
+    }
+  }
+}
