@@ -1,0 +1,54 @@
+
+ - Go to the Jenkins dashboard and click on `New Item` to create a pipeline.
+
+ - Enter `CI/CD-pipeline` then select `Pipeline` and click `OK`.
+
+- Pipeline:
+    Definition: Pipeline script from SCM
+    SCM: Git
+      Repositories:
+        - Repository URL: https://github.com/umit-ciftci/konzek-3.git
+        - Branches to build: 
+            Branch Specifier: */main
+
+    Script Path: Jenkinsfile 
+
+    ---------------------------------------------------------
+    Jenkinsfile ile  Terraform state dosyasını S3de saklamak istersek diye Jenkinsfilde bu eklentiyi yazabiliriz.
+
+    pipeline {
+    agent any
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '3'))
+        disableConcurrentBuilds()
+        timestamps()
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Upload to S3 Bucket') {
+            steps {
+                script {
+                    def awsAccessKeyId = env.AWS_ACCESS_KEY_ID
+                    def awsSecretAccessKey = env.AWS_SECRET_ACCESS_KEY
+                    def region = 'us-east-1'
+                    def bucketName = 'konzek_bucket'
+
+                    // Set AWS credentials
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'aws-credentials-id', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                        // Upload files to S3 bucket
+                        sh "aws s3 cp your_file_path s3://${bucketName}/your_destination_path --region ${region}"
+                    }
+                }
+            }
+        }
+
+        // Add more stages as needed
+    }
+}
